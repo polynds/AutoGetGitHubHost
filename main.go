@@ -35,7 +35,10 @@ func (t *Task) Run() {
 		case <-t.ticker.C:
 			t.wg.Add(1)
 			fmt.Println("doUpdateHosts...")
-			go doUpdateHosts(t)
+			go func() {
+				defer t.wg.Done()
+				doUpdateHosts()
+			}()
 		}
 	}
 }
@@ -65,6 +68,8 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go task.Run()
 
+	go doUpdateHosts()
+
 	select {
 	case sig := <-c:
 
@@ -73,9 +78,7 @@ func main() {
 	}
 }
 
-func doUpdateHosts(task *Task) {
-	defer task.wg.Done()
-
+func doUpdateHosts() {
 	var ch = make(chan string, 2)
 	//并发下载
 	MultiDownload(cfg, ch)
