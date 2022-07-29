@@ -3,6 +3,9 @@ package main
 import (
 	"AutoGetGitHubHost/config"
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
 	"time"
 )
 
@@ -14,8 +17,35 @@ func initConfig() {
 		fmt.Println("配置文件初始化失败")
 		return
 	}
-	//fmt.Printf("%+v\n", _cfg)
 	cfg = _cfg
+}
+
+type Task struct {
+	closed chan struct{}
+	wg     sync.WaitGroup
+	ticker *time.Ticker
+}
+
+func (t *Task) Run() {
+	for {
+		select {
+		case <-t.closed:
+			fmt.Println("close...")
+			return
+		case <-t.ticker.C:
+			t.wg.Add(1)
+			fmt.Println("doUpdateHosts...")
+			go doUpdateHosts(t)
+		}
+	}
+}
+
+func (t *Task) Stop() {
+	fmt.Println("got close signal")
+	close(t.closed)
+	//在这里会等待所有的协程都退出
+	t.wg.Wait()
+	fmt.Println("all goroutine　done")
 }
 
 func main() {
@@ -26,12 +56,31 @@ func main() {
 		return
 	}
 
-	ch := make(chan string, 2)
+	task := &Task{
+		closed: make(chan struct{}),
+		ticker: time.NewTicker(time.Second * 30),
+	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+	go task.Run()
+
+	select {
+	case sig := <-c:
+
+		fmt.Printf("Got %s signal. Aborting...\n", sig)
+		task.Stop()
+	}
+}
+
+func doUpdateHosts(task *Task) {
+	defer task.wg.Done()
+
+	var ch = make(chan string, 2)
 	//并发下载
 	MultiDownload(cfg, ch)
 	//hosts文件
 	UpdateHosts(cfg, ch)
-
 }
 
 func UpdateHosts(config *config.Config, ch chan string) {
