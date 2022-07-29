@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -13,7 +14,7 @@ const (
 	UrlReg     = `[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+`
 	Header     = "#AutoGetGitHubHostStart"
 	Footer     = "#AutoGetGitHubHostEnd"
-	ReplaceReg = Header + `([\w\W]+)` + Footer
+	ReplaceReg = `#AutoGetGitHubHostStart([\w\W]+)#AutoGetGitHubHostEnd`
 )
 
 func updateOsHosts(filePath string) error {
@@ -21,7 +22,7 @@ func updateOsHosts(filePath string) error {
 		//读取全部
 		text := utils.ReadAll(filePath)
 		hostsContent := formatContent(string(text))
-		fmt.Println(hostsContent)
+		//fmt.Printf("-----------------------------\n%s\n%s\n----------------------", text,hostsContent)
 		replaceContent(hostsContent)
 		return nil
 	}
@@ -59,8 +60,9 @@ func replaceContent(hostsContent string) {
 	systemHostsText := utils.ReadAll(systemHostsPath)
 
 	reg := regexp.MustCompile(ReplaceReg)
-	text := reg.FindAllString(string(systemHostsText), -1)
-	if len(text) < 1 {
+	oldHostsContent := reg.FindAllString(string(systemHostsText), -1)
+	//fmt.Printf("11113%s\n", text)
+	if len(oldHostsContent) < 1 {
 		//还没有追加到文件末尾
 		err := utils.AppendToFile(systemHostsPath, hostsContent)
 		if err != nil {
@@ -69,12 +71,19 @@ func replaceContent(hostsContent string) {
 		}
 	} else {
 		//替换
-		afterText := reg.ReplaceAllString(hostsContent, `${1}`)
-		err := utils.WriteAll(systemHostsPath, afterText)
+		fmt.Printf("\nhostsContent:\n%s\n", hostsContent)
+		//oldHostsContent := reg.FindAllString(string(systemHostsText), -1)
+		//oldHostsContent := reg.ReplaceAllString(string(systemHostsText), `${1}`)
+		fmt.Printf("\noldHostsContent:\n%s\n", oldHostsContent)
+		newHostsContent := strings.ReplaceAll(string(systemHostsText), oldHostsContent[0], hostsContent)
+		fmt.Printf("\nnewHostsContent\n%s\n", newHostsContent)
+		//afterText := reg.ReplaceAllString(hostsContent, `${1}`)
+		//fmt.Printf("11112%s\n", afterText)
+		err := utils.WriteAll(systemHostsPath, newHostsContent)
 		if err != nil {
 			fmt.Println("替换hosts文件内容失败")
 			return
 		}
 	}
-	fmt.Println(string(systemHostsText), text)
+	//fmt.Println(string(systemHostsText), text)
 }

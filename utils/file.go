@@ -82,7 +82,7 @@ func ReadAll(filePath string) []byte {
 
 func WriteAll(filePath string, data string) error {
 
-	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_RDWR, os.ModePerm)
+	file, err := os.OpenFile(filePath, os.O_TRUNC|os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		fmt.Println("写入文件打开失败", err)
 		return err
