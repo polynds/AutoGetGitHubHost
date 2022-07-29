@@ -58,7 +58,7 @@ func main() {
 
 	task := &Task{
 		closed: make(chan struct{}),
-		ticker: time.NewTicker(time.Second * 30),
+		ticker: time.NewTicker(time.Hour * 1),
 	}
 
 	c := make(chan os.Signal)
