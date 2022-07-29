@@ -71,19 +71,14 @@ func replaceContent(hostsContent string) {
 		}
 	} else {
 		//替换
-		fmt.Printf("\nhostsContent:\n%s\n", hostsContent)
-		//oldHostsContent := reg.FindAllString(string(systemHostsText), -1)
-		//oldHostsContent := reg.ReplaceAllString(string(systemHostsText), `${1}`)
-		fmt.Printf("\noldHostsContent:\n%s\n", oldHostsContent)
 		newHostsContent := strings.ReplaceAll(string(systemHostsText), oldHostsContent[0], hostsContent)
 		fmt.Printf("\nnewHostsContent\n%s\n", newHostsContent)
-		//afterText := reg.ReplaceAllString(hostsContent, `${1}`)
-		//fmt.Printf("11112%s\n", afterText)
+
 		err := utils.WriteAll(systemHostsPath, newHostsContent)
 		if err != nil {
 			fmt.Println("替换hosts文件内容失败")
 			return
 		}
 	}
-	//fmt.Println(string(systemHostsText), text)
+	fmt.Println("replaceContent done.")
 }
